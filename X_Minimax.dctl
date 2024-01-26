@@ -1,0 +1,75 @@
+#line 2
+
+__DEVICE__ inline float3 pixelFromXY(__TEXTURE__ p_TexR, __TEXTURE__ p_TexG, __TEXTURE__ p_TexB, int p_X, int p_Y) {
+    return make_float3(
+        _tex2D(p_TexR, p_X, p_Y),
+        _tex2D(p_TexG, p_X, p_Y),
+        _tex2D(p_TexB, p_X, p_Y)
+    );
+}
+
+__DEVICE__ float3 Minimax(__TEXTURE__ p_TexR, __TEXTURE__ p_TexG, __TEXTURE__ p_TexB, int p_X, int p_Y, float size) {
+    
+    int radius = abs(size);
+
+    float3 sum;
+    if (size >= 0){
+    sum = make_float3(0.0f, 0.0f, 0.0f);
+    }
+    else {
+    sum = make_float3(999.0f, 999.0f, 999.0f);
+    }
+    
+    for (int i = -radius; i <= radius; i += 1) {
+        for (int j = -radius; j <= radius; j += 1) {
+            float3 localvalue = pixelFromXY(p_TexR, p_TexG, p_TexB, p_X + i, p_Y + j);
+
+            if (size >= 0) {
+
+            if (sum.x < localvalue.x){
+                sum.x = localvalue.x;
+                }
+            if (sum.y < localvalue.y){
+                sum.y = localvalue.y;
+                }
+            if (sum.z < localvalue.z){
+                sum.z = localvalue.z;
+                }
+
+            }
+            
+            else {
+               
+            if (sum.x > localvalue.x){
+                sum.x = localvalue.x;
+                }
+            if (sum.y > localvalue.y){
+                sum.y = localvalue.y;
+                }
+            if (sum.z > localvalue.z){
+                sum.z = localvalue.z;
+                }
+
+            }
+            
+        }
+    }
+
+    return sum;
+}
+
+DEFINE_UI_PARAMS(p_Radius, value, DCTLUI_SLIDER_INT, 0, -100, 100, 1)
+
+// Main function
+__DEVICE__ float3 transform(int p_Width, int p_Height, int p_X, int p_Y, __TEXTURE__ p_TexR, __TEXTURE__ p_TexG, __TEXTURE__ p_TexB) {
+    float3 inRGB = pixelFromXY(p_TexR, p_TexG, p_TexB, p_X, p_Y);
+    float3 out = inRGB;
+
+    // minimax function
+    if (p_Radius != 0) out = Minimax(p_TexR, p_TexG, p_TexB, p_X, p_Y, p_Radius);
+
+    
+
+    // Output the final result
+    return out;
+}
